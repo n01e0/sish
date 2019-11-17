@@ -11,17 +11,13 @@ typedef enum {
     ALLOC
 }err_t;
 
-int sish_cd(char **args);
-int help(char **args);
 int sish_exit(char **args);
 
 char *cmd_str[] = {
-    "cd",
     "exit"
 };
 
 int (*cmd_fn[]) (char**) =  {
-    &sish_cd,
     &sish_exit
 };
 
@@ -41,16 +37,6 @@ void eprint(err_t err) {
             fprintf(stderr, "\e[33;41;1m]error:\e[m] allocation error\n");
             exit(EXIT_FAILURE);
     }
-}
-
-int sish_cd(char **args) {
-    if (args[1] == NULL) {
-        fprintf(stderr, "Usage: cd <directory>\n");
-    } else {
-        if(chdir(args[1]) != 0)
-            perror("lsh");
-    }
-    return 1;
 }
 
 int sish_exit(char **args) {
