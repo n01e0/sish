@@ -50,10 +50,10 @@ int launch(char **args) {
     pid = fork();
     if (pid == 0) {
         if (execvp(args[0], args) == -1)
-            perror("lsh");
+            perror("sish");
         exit(EXIT_FAILURE);
     } else if (pid < 0) {
-        perror("lsh");
+        perror("sish");
     } else {
         do {
             waitpid(pid, &status, WUNTRACED);
