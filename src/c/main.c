@@ -5,42 +5,61 @@
 #include <stdio.h>
 #include <string.h>
 
+static char **env;
+
 typedef enum {
+    CH_DIR,
     EXEC,
     TOKENIZE,
-    ALLOC
+    ALLOC,
+    LOOP
 }err_t;
-
-int sish_exit(char **args);
-
-char *cmd_str[] = {
-    "exit"
-};
-
-int (*cmd_fn[]) (char**) =  {
-    &sish_exit
-};
-
-int cmd_num() {
-    return sizeof(cmd_str) / sizeof(char *);
-}
 
 void eprint(err_t err) {
     switch (err) {
+        case LOOP:
+            fprintf(stderr, "\e[32;41;1merror:\e[m in loop error\n");
+            exit(EXIT_FAILURE);
         case EXEC:
-            fprintf(stderr, "\e[33;41;1m]error:\e[m] execute error\n");
+            fprintf(stderr, "\e[32;41;1merror:\e[m execute error\n");
             exit(EXIT_FAILURE);
         case TOKENIZE:
-            fprintf(stderr, "\e[33;41;1m]error:\e[m] tokenize error\n");
+            fprintf(stderr, "\e[32;41;1merror:\e[m tokenize error\n");
             exit(EXIT_FAILURE);
         case ALLOC:
-            fprintf(stderr, "\e[33;41;1m]error:\e[m] allocation error\n");
+            fprintf(stderr, "\e[32;41;1merror:\e[m allocation error\n");
+            exit(EXIT_FAILURE);
+        case CH_DIR:
+            fprintf(stderr, "\e[32;41;1merror:\e[m change directory error\n");
+            exit(EXIT_FAILURE);
+        default:
+            fprintf(stderr, "\e[32;41;1merror:\e[m something error\n");
             exit(EXIT_FAILURE);
     }
 }
 
 int sish_exit(char **args) {
     return 0;
+}
+
+int sish_cd(char **args) {
+    if (chdir((args[1] != NULL? args[1]: getenv("HOME"))) != 0)
+        eprint(CH_DIR);
+    return 1;
+}
+
+char *cmd_str[] = {
+    "exit",
+    "cd"
+};
+
+int (*cmd_fn[]) (char**) =  {
+    &sish_exit,
+    &sish_cd
+};
+
+int cmd_num() {
+    return sizeof(cmd_str) / sizeof(char *);
 }
 
 int launch(char **args) {
@@ -50,10 +69,9 @@ int launch(char **args) {
     pid = fork();
     if (pid == 0) {
         if (execvp(args[0], args) == -1)
-            perror("sish");
-        exit(EXIT_FAILURE);
+            eprint(EXEC);
     } else if (pid < 0) {
-        perror("sish");
+        perror("fork error");
     } else {
         do {
             waitpid(pid, &status, WUNTRACED);
@@ -157,7 +175,8 @@ void loop() {
     } while(status);
 }
 
-int main(int argc, char **argv) {
+int main(int argc, const char **argv, char **envp) {
+    env = envp;
     loop();
     return EXIT_SUCCESS;
 }
